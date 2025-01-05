@@ -15,6 +15,7 @@ find_package(Vulkan)
 find_package(glslang REQUIRED)
 add_subdirectory(kompute)
 target_include_directories(${TARGET_NAME} PRIVATE include)
+target_precompile_headers(${TARGET_NAME} PRIVATE include/hack.hpp)
 
 add_definitions(-DVKFFT_BACKEND=${VKFFT_BACKEND})
 include(CheckIPOSupported)
