@@ -1,16 +1,6 @@
 #include "vkhelpers.h"
 #include <iostream>
 
-void saveToFile(std::string fname, const char* buf, size_t size) {
-  std::ofstream file(fname, std::ios::binary);
-  if (!file.is_open()) {
-    throw std::runtime_error("failed to open file!");
-  }
-
-  file.write(buf, size);
-  file.close();
-}
-
 vk::PhysicalDevice pickPhysicalDevice(const vk::Instance& instance,
                                       const int32_t desiredGPU) {
   // check if there are GPUs that support Vulkan and "intelligently" select
@@ -96,56 +86,6 @@ VulkanApp::VulkanApp() {
   commandPool = device.createCommandPool(commandPoolCreateInfo);
   queue = device.getQueue(computeQueueFamilyIndex, 0);
   fence = device.createFence(vk::FenceCreateInfo());
-}
-
-void VulkanApp::copyBuffers(vk::Buffer& srcBuffer, vk::Buffer& dstBuffer,
-                            uint32_t bufferSize) {
-  auto commandBuffer =
-      device
-          .allocateCommandBuffers(
-              {commandPool, vk::CommandBufferLevel::ePrimary, 1})
-          .front();
-  vk::CommandBufferBeginInfo cBBI(
-      vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-  commandBuffer.begin(cBBI);
-  commandBuffer.copyBuffer(srcBuffer, dstBuffer,
-                           vk::BufferCopy(0, 0, bufferSize));
-  commandBuffer.end();
-  vk::SubmitInfo submitInfo(nullptr, nullptr, commandBuffer);
-  queue.submit(submitInfo, fence);
-  queue.waitIdle();
-  auto result = device.waitForFences(fence, true, -1);
-  vk::resultCheck(result, "waitForFences unsuccesful");
-  result = device.resetFences(1, &fence);
-  vk::resultCheck(result, "resetFences unsuccesful");
-  device.freeCommandBuffers(commandPool, commandBuffer);
-}
-
-void VulkanApp::copyInBatches(vk::Buffer& srcBuffer, vk::Buffer& dstBuffer,
-                              uint32_t batchSize, uint32_t numBatches) {
-  auto commandBuffer =
-      device
-          .allocateCommandBuffers(
-              {commandPool, vk::CommandBufferLevel::ePrimary, 1})
-          .front();
-  vk::CommandBufferBeginInfo cBBI(
-      vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-  commandBuffer.begin(cBBI);
-
-  for (uint32_t i = 0; i < numBatches; i++) {
-    commandBuffer.reset();
-    commandBuffer.copyBuffer(
-        srcBuffer, dstBuffer,
-        vk::BufferCopy(i * batchSize, i * batchSize, batchSize));
-  }
-  commandBuffer.end();
-  vk::SubmitInfo submitInfo(nullptr, nullptr, commandBuffer);
-  queue.submit(submitInfo, fence);
-  auto result = device.waitForFences(fence, true, -1);
-  vk::resultCheck(result, "waitForFences unsuccesful");
-  result = device.resetFences(1, &fence);
-  vk::resultCheck(result, "resetFences unsuccesful");
-  device.freeCommandBuffers(commandPool, commandBuffer);
 }
 
 uint32_t VulkanApp::getComputeQueueFamilyIndex() {

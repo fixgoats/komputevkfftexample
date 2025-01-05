@@ -3,8 +3,6 @@
 #include "vkhelpers.h"
 #include <bit>
 #include <cmath>
-#include <cstdlib>
-#include <format>
 #include <iostream>
 #include <memory>
 #include <string>
