@@ -42,9 +42,7 @@ public:
 };
 
 int main() {
-  auto bleh = VulkanApp();
-  // Empty deleters so VulkanApp definitely handles clean up (maybe make
-  // VulkanApp a shared object)
+  VulkanApp bleh{};
 
   std::vector<f32> buff(128 * 2);
   for (u32 i = 0; i < 128; i++) {
