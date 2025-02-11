@@ -76,8 +76,8 @@ public:
     lParams->commandBuffer = bit_cast<VkCommandBuffer*>(&commandBuffer);
     VkFFTAppend(app, direction, lParams);
   }
-  virtual void preEval(const vk::CommandBuffer& commandBuffer) override {};
-  virtual void postEval(const vk::CommandBuffer& commandBuffer) override {};
+  virtual void preEval(const vk::CommandBuffer&) override {};
+  virtual void postEval(const vk::CommandBuffer&) override {};
   virtual ~FFT() override {};
   VkFFTApplication* app;
   VkFFTLaunchParams* lParams;
@@ -89,16 +89,16 @@ constexpr f32 hbar = 6.582e-1;
 int main() {
   VulkanApp bleh{};
 
-  const f32 E = 1.3;
-  const f32 tstart = 0;
-  const f32 tend = 10;
-  const u32 samples = 1024;
+  constexpr f32 omega = 14;
+  constexpr f32 tstart = 0;
+  constexpr f32 tend = 10;
+  constexpr u32 samples = 1024;
   std::vector<f32> buff(samples * 2);
   const f32 dt = (tend - tstart) / (f32)samples;
   for (u32 i = 0; i < samples; i++) {
     f32 t = tstart + i * dt;
-    buff[2 * i] = std::cos(-E * t / hbar);
-    buff[2 * i + 1] = std::sin(-E * t / hbar);
+    buff[2 * i] = std::cos(+omega * t);
+    buff[2 * i + 1] = std::sin(+omega * t);
     /*buff[2 * i] = std::cos(-2 * x) * std::cos(M_PI * x) -
                   std::sin(-2 * x) * std::sin(M_PI * x);
     buff[2 * i + 1] = std::sin(-2 * x) * std::cos(M_PI * x) +
@@ -132,17 +132,21 @@ int main() {
   std::shared_ptr<FFT> backward{new FFT(&app, 1, &lp)};
 
   seq->record<kp::OpSyncDevice>({tensor})
-      ->record(forward)
+      ->record(backward)
       ->record<kp::OpSyncLocal>({tensor})
       ->eval();
-  deleteVkFFT(&app);
 
   std::ofstream values("testsign.csv");
   buff = tensor->vector();
-  std::vector<c32> arg(buff.begin(), buff.end());
+  // std::vector<c32> arg(buff.begin(), buff.end());
+  std::vector<c32> arg(samples);
+  for (u32 i = 0; i < samples; i++) {
+    arg[i] = {buff[2 * i], buff[2 * i + 1]};
+  }
   // fftshift(arg);
   for (u32 i = 0; i < samples; i++) {
     values << numfmt(arg[i]) << ' ';
   }
   values.close();
+  deleteVkFFT(&app);
 }
